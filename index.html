@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#7fd3ff" />
+  <title>Banana Basket 🍌</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div id="popups"></div>
+
+  <!-- Top bar: wallet -->
+  <div id="topbar" class="hidden">
+    <div class="pill" title="Bananas"><span>🍌</span><b id="wallet">0</b></div>
+    <div class="pill gold" title="Golden Bananas"><span>🍌⭐</span><b id="golden">0</b></div>
+    <button id="muteBtn" class="icon-btn" aria-label="Sound">🔊</button>
+  </div>
+
+  <!-- Hadith of the Day -->
+  <section id="screen-hadith" class="screen">
+    <div class="card hadith-card">
+      <div class="logo">Banana <span>Basket</span> 🧺</div>
+      <div class="ribbon">🌙 Hadith of the Day</div>
+      <blockquote id="hadithText"></blockquote>
+      <div class="source">— <span id="hadithSource"></span></div>
+      <div class="explain"><b>What does it mean?</b><p id="hadithExplain"></p></div>
+      <button class="btn big" id="hadithPlay">Play ▶</button>
+    </div>
+  </section>
+
+  <!-- Level hub -->
+  <section id="screen-hub" class="screen hidden">
+    <div class="card hub-card">
+      <div class="logo small">Banana <span>Basket</span></div>
+      <div id="hubLevel" class="level-badge">Level 1</div>
+      <div id="hubBoss" class="boss-warn hidden">💣 BOSS LEVEL! Watch out for the Storm Cloud's bombs!</div>
+      <p id="hubGoal" class="goal"></p>
+      <div id="levelPath" class="level-path"></div>
+      <button class="btn big" id="hubPlay">Start ▶</button>
+      <div class="row">
+        <button class="btn alt" id="hubPractice">🎯 Practice</button>
+        <button class="btn alt" id="hubShop">🛒 Shop</button>
+        <button class="btn alt" id="hubHadith">🌙 Hadith</button>
+      </div>
+      <p class="hint">Move: ← → keys, A / D, mouse or finger · Powers: 1 2 3 4 · Pause: P</p>
+    </div>
+  </section>
+
+  <!-- Practice chooser -->
+  <section id="screen-practice" class="screen hidden">
+    <div class="card">
+      <div class="ribbon">🎯 Practice</div>
+      <p class="goal">No clock, no target — just catch and have fun!</p>
+      <div class="practice-choices">
+        <button class="choice" id="practiceEasy">
+          <span class="ico">🍌</span><b>Just Bananas</b><small>Nice and relaxed. Great for little ones!</small>
+        </button>
+        <button class="choice" id="practiceBombs">
+          <span class="ico">💣</span><b>Bananas + Bombs</b><small>Practise dodging before the boss levels.</small>
+        </button>
+      </div>
+      <p class="sub">Just for practice — no bananas are earned.</p>
+      <button class="btn alt" id="practiceBack">◀ Back</button>
+    </div>
+  </section>
+
+  <!-- HUD -->
+  <section id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="hud-level" id="hudLevel">Level 1</div>
+      <div class="progress">
+        <div class="bar"><div id="hudBar"></div></div>
+        <div class="count"><span>🍌</span><b id="hudCount">0</b><span id="hudTarget">/10</span></div>
+      </div>
+      <div class="timer" id="hudTimer">30</div>
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸</button>
+    </div>
+    <div class="powers" id="powerBar"></div>
+  </section>
+
+  <!-- Pause -->
+  <section id="screen-pause" class="screen hidden dim">
+    <div class="card small-card">
+      <h2>Paused</h2>
+      <button class="btn big" id="resumeBtn">Resume ▶</button>
+      <button class="btn alt" id="quitBtn">Leave Level</button>
+    </div>
+  </section>
+
+  <!-- Hadith challenge -->
+  <section id="screen-quiz" class="screen hidden dim">
+    <div class="card quiz-card">
+      <div class="ribbon">⭐ Hadith Challenge</div>
+      <blockquote id="quizHadith" class="small-quote"></blockquote>
+      <h2 id="quizQuestion"></h2>
+      <div id="quizOptions" class="options"></div>
+      <div id="quizFeedback" class="feedback hidden"></div>
+      <button class="btn big hidden" id="quizNext">Continue ▶</button>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section id="screen-result" class="screen hidden dim">
+    <div class="card result-card">
+      <h1 id="resTitle">Great job!</h1>
+      <div id="resStars" class="stars"></div>
+      <p id="resText"></p>
+      <div class="earn" id="resEarn"></div>
+      <button class="btn big" id="resNext">Next Level ▶</button>
+      <div class="row">
+        <button class="btn alt" id="resShop">🛒 Shop</button>
+        <button class="btn alt" id="resMenu">🏠 Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shop -->
+  <section id="screen-shop" class="screen hidden dim">
+    <div class="card shop-card">
+      <h2>🛒 Banana Shop</h2>
+      <p class="sub">Spend the bananas you catch on awesome powers!</p>
+      <div class="shop-grid" id="shopPowers"></div>
+      <h3>Baskets</h3>
+      <div class="shop-grid skins" id="shopSkins"></div>
+      <button class="btn big" id="shopClose">Done ✔</button>
+    </div>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
