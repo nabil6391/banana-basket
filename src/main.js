@@ -309,9 +309,10 @@ function renderShop() {
   grid.innerHTML = '';
   for (const [type, p] of Object.entries(POWERS)) {
     const item = document.createElement('div');
-    item.className = 'shop-item';
+    const have = save.powers[type] || 0;
+    item.className = `shop-item p-${type}`;
     item.innerHTML = `<div class="ico">${p.icon}</div><div class="name">${p.name}</div>
-      <div class="desc">${p.desc}</div><div class="own">You have: ${save.powers[type] || 0}</div>`;
+      <div class="desc">${p.desc}</div><div class="own${have ? ' has' : ''}">${have ? `You have ×${have}` : 'None yet'}</div>`;
     const b = document.createElement('button');
     b.className = 'btn';
     b.textContent = `Buy · ${p.price} 🍌`;
@@ -335,7 +336,7 @@ function renderShop() {
     const owned = save.skins.includes(id);
     const price = SKIN_PRICES[id];
     const item = document.createElement('div');
-    item.className = `shop-item${save.skin === id ? ' equipped' : ''}`;
+    item.className = `shop-item skin${save.skin === id ? ' equipped' : ''}${id === 'golden' ? ' gold' : ''}`;
     const weave = `repeating-linear-gradient(90deg, ${s.a} 0 8px, ${s.b} 8px 16px)`;
     item.innerHTML = `<div class="swatch" style="background:${weave};border-color:#${s.rim.toString(16).padStart(6, '0')}"></div><div class="name">${s.name}</div>`;
     const b = document.createElement('button');

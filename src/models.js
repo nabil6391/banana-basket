@@ -106,16 +106,14 @@ export function makeBomb() {
   spark.position.set(0.3, 1.1, 0);
   spark.name = 'spark';
   g.add(spark);
-  // grumpy-cute face
-  const eyeW = toon(0xffffff), eyeB = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  // grumpy-cute face: small solid bean eyes (no whites), tilted brows
+  const eyeB = new THREE.MeshBasicMaterial({ color: 0x111111 });
   for (const s of [-1, 1]) {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), eyeW);
-    e.position.set(0.2 * s, 0.1, 0.55);
-    e.scale.z = 0.5;
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), eyeB);
+    e.position.set(0.2 * s, 0.1, 0.6);
+    e.scale.set(0.8, 1.25, 0.5);
+    e.rotation.z = 0.25 * s;
     g.add(e);
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), eyeB);
-    p.position.set(0.2 * s, 0.08, 0.62);
-    g.add(p);
     const brow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.04), eyeB);
     brow.position.set(0.2 * s, 0.27, 0.56);
     brow.rotation.z = -0.35 * s;
@@ -261,14 +259,13 @@ export function makeCloud(scale = 1, color = 0xffffff) {
 // The boss: a mischievous storm cloud that drops bombs.
 export function makeBossCloud() {
   const g = makeCloud(1.6, 0x6d6f8f);
-  const eyeW = toon(0xffffff), black = new THREE.MeshBasicMaterial({ color: 0x151520 });
+  const black = new THREE.MeshBasicMaterial({ color: 0x151520 });
   for (const s of [-1, 1]) {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), eyeW);
-    e.position.set(0.38 * s, 0.1, 0.85);
-    e.scale.z = 0.5;
-    g.add(e);
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), black);
-    p.position.set(0.38 * s, 0.05, 0.98);
+    // small solid bean eyes; named 'pupil' so the boss can still glance at the basket
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), black);
+    p.position.set(0.38 * s, 0.08, 0.95);
+    p.scale.set(0.85, 1.3, 0.5);
+    p.rotation.z = 0.2 * s;
     p.name = 'pupil';
     g.add(p);
     const brow = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.07, 0.05), black);

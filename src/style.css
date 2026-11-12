@@ -7,6 +7,10 @@
   --blue: #3fa6e0;
   --ink: #4a2f12;
   --card: #fffaf0;
+  --orange: #ff9a3c;
+  --orange-dark: #d8731a;
+  --purple: #9b6ff0;
+  --purple-dark: #6f48c2;
 }
 * { box-sizing: border-box; }
 /* The whole UI is sized in rem, so it scales with the screen: ~14px on phones, up to 22px on big monitors. */
@@ -36,8 +40,16 @@ html, body {
   background: var(--card); border-radius: 1.75rem; padding: 1.375rem 1.625rem 1.625rem;
   width: min(32.5rem, 100%); text-align: center;
   box-shadow: 0 0.5rem 0 #e0c99a, 0 1.125rem 2.5rem rgba(0, 0, 0, 0.2);
-  border: 4px solid #fff; animation: pop 0.35s cubic-bezier(.2, 1.6, .5, 1);
+  border: 4px solid #fff; border-top-width: 0.6rem; border-top-color: var(--yellow);
+  animation: pop 0.35s cubic-bezier(.2, 1.6, .5, 1);
 }
+/* Each screen gets its own colour on the card's top edge so kids learn where they are at a glance */
+.hub-card { border-top-color: var(--pink); }
+.shop-card { border-top-color: var(--blue); }
+.result-card { border-top-color: var(--green); }
+.quiz-card { border-top-color: var(--purple); }
+.pause-card { border-top-color: #3b3d5c; }
+#screen-practice .card { border-top-color: var(--orange); }
 .small-card { width: min(21.25rem, 100%); display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
 @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -62,7 +74,8 @@ blockquote::after { content: '”'; color: var(--yellow-dark); font-size: 2.2rem
 .explain p { margin: 2px 0 0; font-size: 1.05rem; line-height: 1.4; }
 
 h1, h2, h3 { margin: 0.375rem 0; }
-h1 { font-size: 2.2rem; color: var(--green); }
+h1 { font-size: 2.2rem; color: var(--green); text-shadow: 0 3px 0 #fff, 0 0.3125rem 0 rgba(0,0,0,.08); }
+.result-card h1 { display: inline-block; background: #e3f6dc; border-radius: 1.25rem; padding: 0.2rem 1.25rem; }
 h3 { margin-top: 1rem; }
 .sub { margin: 0 0 0.75rem; opacity: 0.8; }
 .hint { font-size: 0.82rem; opacity: 0.65; margin: 0.875rem 0 0; }
@@ -75,11 +88,26 @@ h3 { margin-top: 1rem; }
   background: var(--green); box-shadow: 0 0.3125rem 0 var(--green-dark);
   transition: transform 0.08s, box-shadow 0.08s;
 }
-.btn:hover { filter: brightness(1.07); }
+.btn:hover { filter: brightness(1.07); transform: translateY(-2px); }
 .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--green-dark); }
 .btn.big { font-size: 1.5rem; padding: 0.75rem 2.5rem; }
 .btn.alt { background: var(--blue); box-shadow: 0 0.3125rem 0 #2a7fb8; }
 .btn.alt:active { box-shadow: 0 1px 0 #2a7fb8; }
+.btn.orange { background: var(--orange); box-shadow: 0 0.3125rem 0 var(--orange-dark); }
+.btn.orange:active { box-shadow: 0 1px 0 var(--orange-dark); }
+.btn.purple { background: var(--purple); box-shadow: 0 0.3125rem 0 var(--purple-dark); }
+.btn.purple:active { box-shadow: 0 1px 0 var(--purple-dark); }
+/* Keyboard focus ring (kids on laptops tab through menus) */
+.btn:focus-visible, .icon-btn:focus-visible, .choice:focus-visible, .option:focus-visible, .power-btn:focus-visible {
+  outline: 4px solid #fff; box-shadow: 0 0 0 7px var(--blue), 0 0.3125rem 0 rgba(0,0,0,.2);
+}
+.hint kbd {
+  font-family: inherit; font-size: 0.78rem; font-weight: 800; background: #fff; border: 2px solid #e8d9b5; border-bottom-width: 3px;
+  border-radius: 0.4rem; padding: 0 0.35rem; margin: 0 1px; color: var(--ink); opacity: 1;
+}
+.big-ico { font-size: 3rem; line-height: 1; margin-top: 0.25rem; }
+.pause-card h2 { color: #3b3d5c; font-size: 1.8rem; margin: 0; }
+.pause-card .sub { margin: 0; }
 .btn:disabled { background: #bbb; box-shadow: 0 0.3125rem 0 #999; cursor: default; filter: none; }
 .icon-btn {
   font-size: 1.3rem; width: 2.875rem; height: 2.875rem; border-radius: 50%; border: 3px solid #fff;
@@ -126,6 +154,8 @@ h3 { margin-top: 1rem; }
 .choice:hover { border-color: var(--yellow-dark); }
 .choice:active { transform: translateY(4px); box-shadow: 0 1px 0 #f0dca8; }
 .choice .ico { font-size: 2.6rem; }
+#practiceEasy { background: #fff8d6; border-color: var(--yellow); box-shadow: 0 0.3125rem 0 var(--yellow-dark); }
+#practiceBombs { background: #e9eaf6; border-color: #8e91b8; box-shadow: 0 0.3125rem 0 #5d6088; }
 .choice b { font-size: 1.15rem; }
 .choice small { font-size: 0.85rem; opacity: 0.75; line-height: 1.25; }
 @media (max-width: 26.25rem) { .practice-choices { grid-template-columns: 1fr; } }
@@ -206,14 +236,33 @@ h3 { margin-top: 1rem; }
 .shop-card { width: min(38.75rem, 100%); }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.125rem, 1fr)); gap: 0.625rem; }
 .shop-item { background: #fff; border-radius: 1.125rem; padding: 0.625rem; border: 3px solid #f0dca8; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.shop-item .ico { font-size: 2.2rem; }
+.shop-item .ico {
+  font-size: 2.2rem; line-height: 1; width: 4rem; height: 4rem; display: grid; place-items: center;
+  border-radius: 50%; background: var(--tint, #fff3c4); margin: 2px 0 4px;
+}
 .shop-item .name { font-weight: 800; }
 .shop-item .desc { font-size: 0.82rem; opacity: 0.75; line-height: 1.2; min-height: 2.4em; }
-.shop-item .own { font-size: 0.85rem; font-weight: 700; color: var(--green-dark); }
+.shop-item .own { font-size: 0.8rem; font-weight: 700; color: #a08a5a; background: #f6eed9; border-radius: 62.4375rem; padding: 1px 0.6rem; margin: 2px 0; }
+.shop-item .own.has { color: #fff; background: var(--green); }
 .shop-item .btn { font-size: 0.95rem; padding: 0.375rem 0.75rem; margin-top: 4px; }
-.shop-item.equipped { border-color: var(--green); }
+.shop-item.equipped { border-color: var(--green); background: #effaea; }
+/* Power cards: each one tinted to match its icon */
+.shop-item.p-shield { --tint: #dcefff; border-color: #a9d3f5; }
+.shop-item.p-magnet { --tint: #ffe1e1; border-color: #f5a9a9; }
+.shop-item.p-speed { --tint: #fff2b3; border-color: #f2d35a; }
+.shop-item.p-extra { --tint: #ddf7d6; border-color: #9fdb90; }
+.shop-item.gold { background: linear-gradient(#fffbe6, #fff2b3); }
+.shop-head { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 1.2rem; color: var(--blue); }
+.shop-head span { font-size: 1.4rem; }
 .swatch { width: 3.375rem; height: 2.25rem; border-radius: 0 0 1.125rem 1.125rem; border-top: 0.375rem solid; margin: 0.375rem 0; }
 #shopClose { margin-top: 1rem; }
+
+/* ---------- Motion off when the OS asks for it ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .popup { animation: none !important; opacity: 1; }
+  .btn:hover { transform: none; }
+}
 
 @media (max-width: 40rem) {
   .powers { top: calc(4.6rem + env(safe-area-inset-top)); right: 50%; transform: translateX(50%); flex-direction: row; }

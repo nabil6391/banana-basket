@@ -42,11 +42,11 @@
       <div id="levelPath" class="level-path"></div>
       <button class="btn big" id="hubPlay">Start ▶</button>
       <div class="row">
-        <button class="btn alt" id="hubPractice">🎯 Practice</button>
+        <button class="btn orange" id="hubPractice">🎯 Practice</button>
         <button class="btn alt" id="hubShop">🛒 Shop</button>
-        <button class="btn alt" id="hubHadith">🌙 Hadith</button>
+        <button class="btn purple" id="hubHadith">🌙 Hadith</button>
       </div>
-      <p class="hint">Move: ← → keys, A / D, mouse or finger · Powers: 1 2 3 4 · Pause: P</p>
+      <p class="hint">Move <kbd>←</kbd><kbd>→</kbd> <kbd>A</kbd><kbd>D</kbd> mouse or finger · Powers <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> · Pause <kbd>P</kbd></p>
     </div>
   </section>
 
@@ -64,7 +64,7 @@
         </button>
       </div>
       <p class="sub">Just for practice — no bananas are earned.</p>
-      <button class="btn alt" id="practiceBack">◀ Back</button>
+      <button class="btn orange" id="practiceBack">◀ Back</button>
     </div>
   </section>
 
@@ -84,10 +84,12 @@
 
   <!-- Pause -->
   <section id="screen-pause" class="screen hidden dim">
-    <div class="card small-card">
-      <h2>Paused</h2>
+    <div class="card small-card pause-card">
+      <div class="big-ico">⏸️</div>
+      <h2>Taking a break</h2>
+      <p class="sub">Your bananas are safe in the basket.</p>
       <button class="btn big" id="resumeBtn">Resume ▶</button>
-      <button class="btn alt" id="quitBtn">Leave Level</button>
+      <button class="btn orange" id="quitBtn">Leave Level</button>
     </div>
   </section>
 
@@ -113,7 +115,7 @@
       <button class="btn big" id="resNext">Next Level ▶</button>
       <div class="row">
         <button class="btn alt" id="resShop">🛒 Shop</button>
-        <button class="btn alt" id="resMenu">🏠 Menu</button>
+        <button class="btn purple" id="resMenu">🏠 Menu</button>
       </div>
     </div>
   </section>
@@ -123,8 +125,9 @@
     <div class="card shop-card">
       <h2>🛒 Banana Shop</h2>
       <p class="sub">Spend the bananas you catch on awesome powers!</p>
+      <h3 class="shop-head"><span>⚡</span> Powers</h3>
       <div class="shop-grid" id="shopPowers"></div>
-      <h3>Baskets</h3>
+      <h3 class="shop-head"><span>🧺</span> Baskets</h3>
       <div class="shop-grid skins" id="shopSkins"></div>
       <button class="btn big" id="shopClose">Done ✔</button>
     </div>

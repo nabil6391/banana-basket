@@ -72,6 +72,10 @@ export class Game {
     this.paused = false;
     this.bounds = { halfW: 8, top: 13, play: 7 };
     this.input = { left: false, right: false, pointerX: null };
+    // Honour the OS "reduce motion" setting: no idle bobbing, drifting clouds or camera shake.
+    const rm = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    this.reduceMotion = !!rm?.matches;
+    rm?.addEventListener?.('change', (e) => { this.reduceMotion = e.matches; });
 
     this.buildWorld();
     this.bindInput(canvas);
@@ -407,25 +411,29 @@ export class Game {
     this.time += dt;
     const t = this.time;
 
-    // ambient scenery
-    for (const c of this.clouds) {
-      c.position.x += c.userData.speed * dt;
-      if (c.position.x > 50) c.position.x = -50;
+    // ambient scenery (still under reduced motion)
+    const calm = this.reduceMotion;
+    if (!calm) {
+      for (const c of this.clouds) {
+        c.position.x += c.userData.speed * dt;
+        if (c.position.x > 50) c.position.x = -50;
+      }
+      this.bushes.forEach((b, i) => { b.scale.y = b.scale.x * (1 + Math.sin(t * 2 + i) * 0.03); });
     }
-    this.bushes.forEach((b, i) => { b.scale.y = b.scale.x * (1 + Math.sin(t * 2 + i) * 0.03); });
 
     if (this.state === 'playing' && !this.paused) this.update(dt);
     else if (this.state === 'ending') this.updateEnding(dt);
     else if (this.state === 'menu') {
-      this.bx += (Math.sin(t * 0.8) * 2 - this.bx) * dt * 2;
+      this.bx += ((calm ? 0 : Math.sin(t * 0.8) * 2) - this.bx) * dt * 2;
     }
     if (!this.paused) this.updateFx(dt);
 
     // basket transform
+    const idle = this.state === 'menu' && !calm;
     this.basket.position.x = this.bx;
-    this.basket.position.y = BASKET_Y + (this.state === 'menu' ? Math.sin(t * 3) * 0.15 : 0);
+    this.basket.position.y = BASKET_Y + (idle ? Math.sin(t * 3) * 0.15 : 0);
     this.basket.rotation.z = THREE.MathUtils.clamp(-this.bvx * 0.012, -0.25, 0.25);
-    this.basket.rotation.y = this.state === 'menu' ? t * 0.3 : this.basket.rotation.y * 0.9;
+    this.basket.rotation.y = idle ? t * 0.3 : this.basket.rotation.y * 0.9;
     this.squash = Math.max(0, (this.squash || 0) - dt * 5);
     const sq = Math.sin(this.squash * Math.PI) * 0.15;
     this.basket.scale.set(1 + sq, 1 - sq, 1 + sq);
@@ -450,7 +458,7 @@ export class Game {
     // camera shake
     this.shake = Math.max(0, (this.shake || 0) - dt * 2);
     this.camera.position.copy(this.baseCam);
-    if (this.shake > 0) {
+    if (this.shake > 0 && !calm) {
       this.camera.position.x += (Math.random() - 0.5) * this.shake;
       this.camera.position.y += (Math.random() - 0.5) * this.shake;
     }
