@@ -53,7 +53,8 @@ const BASKET_Y = 0.75;
 export class Game {
   constructor(canvas, hooks) {
     this.hooks = hooks; // { onHud, onEnd, onPopup, usePower }
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGPURenderer({ canvas, antialias: true, alpha: true });
+    this.ready = this.renderer.init();
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -81,7 +82,7 @@ export class Game {
     this.bindInput(canvas);
     this.resize();
     window.addEventListener('resize', () => this.resize());
-    this.renderer.setAnimationLoop(() => this.frame());
+    this.ready.then(() => this.renderer.setAnimationLoop(() => this.frame()));
   }
 
   // ---------------- World ----------------
