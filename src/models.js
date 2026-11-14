@@ -84,6 +84,38 @@ export function makeBunch() {
   return shadowed(g);
 }
 
+/** The one golden banana per level: gold body, soft glow ring and a slow-spinning star halo. */
+export function makeGoldenBanana() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(bananaGeo.geo, toon(0xffc21a, { emissive: 0x7a5200, emissiveIntensity: 0.35 }));
+  g.add(body);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.25, 6), toon(0xb8860b));
+  stem.position.set(0.8, 0.33, 0);
+  stem.rotation.z = -0.9;
+  g.add(stem);
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.15, 24),
+    new THREE.MeshBasicMaterial({ color: 0xfff1a8, transparent: true, opacity: 0.45, depthWrite: false }),
+  );
+  glow.position.z = -0.3;
+  glow.name = 'glow';
+  g.add(glow);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.2, 0.07, 6, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }),
+  );
+  ring.name = 'ring';
+  g.add(ring);
+  const starMat = new THREE.MeshBasicMaterial({ color: 0xfffbe0 });
+  for (let i = 0; i < 4; i++) {
+    const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.13), starMat);
+    const a = (i / 4) * Math.PI * 2;
+    s.position.set(Math.cos(a) * 1.2, Math.sin(a) * 1.2, 0.05);
+    ring.add(s);
+  }
+  return shadowed(g);
+}
+
 // ---------- Bomb (cute, not scary) ----------
 export function makeBomb() {
   const g = new THREE.Group();

@@ -10,13 +10,18 @@ const DEFAULTS = {
   skin: 'classic',
   muted: false,
   best: 1,
+  quizDays: [],      // day numbers on which the Hadith Challenge was answered (hub moons)
 };
 
 export function loadSave() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!raw) return structuredClone(DEFAULTS);
-    return { ...structuredClone(DEFAULTS), ...raw, powers: { ...DEFAULTS.powers, ...raw.powers } };
+    return {
+      ...structuredClone(DEFAULTS), ...raw,
+      powers: { ...DEFAULTS.powers, ...raw.powers },
+      quizDays: Array.isArray(raw.quizDays) ? raw.quizDays : [],
+    };
   } catch {
     return structuredClone(DEFAULTS);
   }

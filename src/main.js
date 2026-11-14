@@ -67,8 +67,38 @@ document.addEventListener('click', (e) => {
 $('hadithText').textContent = hadith.text;
 $('hadithSource').textContent = hadith.source;
 $('hadithExplain').textContent = hadith.explain;
-$('hadithPlay').onclick = () => showHub();
+$('hadithPlay').onclick = () => { stopReading(); showHub(); };
 $('hubHadith').onclick = () => show('hadith');
+
+// Read-aloud for pre-readers (Web Speech API; the button only appears when the browser can speak).
+const speech = window.speechSynthesis;
+let reading = false;
+function setReading(on) {
+  reading = on;
+  $('readBtn').classList.toggle('on', on);
+  $('readBtn').setAttribute('aria-pressed', String(on));
+  $('readBtn').querySelector('.ico').textContent = on ? '⏹' : '🔊';
+  $('readBtn').querySelector('.lbl').textContent = on ? 'Stop' : 'Read to me';
+}
+function stopReading() { if (speech && reading) speech.cancel(); setReading(false); }
+function readHadith() {
+  if (!speech) return;
+  if (reading) return stopReading();
+  speech.cancel();
+  const u = new SpeechSynthesisUtterance(`${hadith.text}. What does it mean? ${hadith.explain}`);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  u.pitch = 1.05;
+  u.onend = () => setReading(false);
+  u.onerror = () => setReading(false);
+  setReading(true);
+  speech.speak(u);
+}
+if (speech && 'SpeechSynthesisUtterance' in window) {
+  $('readBtn').classList.remove('hidden');
+  $('readBtn').onclick = readHadith;
+  window.addEventListener('pagehide', () => speech.cancel());
+}
 
 // ---------------- Hub ----------------
 function showHub() {
@@ -87,8 +117,33 @@ function showHub() {
     d.title = boss ? `Boss level ${n}` : `Level ${n}`;
     path.appendChild(d);
   }
+  renderWeek();
   refreshWallet();
   show('hub');
+}
+
+// Seven moons for the last seven days: filled on days the Hadith Challenge was answered.
+// Just a picture of the week — no streaks, no warnings.
+function renderWeek() {
+  const row = $('weekMoons');
+  row.innerHTML = '';
+  const days = new Set(save.quizDays || []);
+  const names = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  for (let i = 6; i >= 0; i--) {
+    const day = today - i;
+    const date = new Date(); date.setDate(date.getDate() - i);
+    const done = days.has(day);
+    const d = document.createElement('div');
+    d.className = `moon${done ? ' done' : ''}${i === 0 ? ' today' : ''}`;
+    d.innerHTML = `<span class="m">${done ? '🌙' : '·'}</span><small>${i === 0 ? 'Today' : names[date.getDay()]}</small>`;
+    d.title = done ? 'Hadith Challenge done' : '';
+    row.appendChild(d);
+  }
+}
+function markQuizDay() {
+  if (!save.quizDays.includes(today)) {
+    save.quizDays = [...save.quizDays.filter((d) => d > today - 60), today];   // keep two months
+  }
 }
 $('hubPlay').onclick = () => startLevel();
 $('hubPractice').onclick = () => show('practice');
@@ -227,7 +282,12 @@ function showQuiz() {
   const box = $('quizOptions');
   box.innerHTML = '';
   const correct = hadith.options[0];
-  for (const opt of shuffle(hadith.options)) {
+  // the golden banana caught in play hides one wrong answer
+  const hint = !!lastResult?.golden && hadith.options.length > 2;
+  $('quizHint').classList.toggle('hidden', !hint);
+  const wrong = shuffle(hadith.options.slice(1));
+  const shown = hint ? [correct, wrong[0]] : hadith.options;
+  for (const opt of shuffle(shown)) {
     const b = document.createElement('button');
     b.className = 'option';
     b.textContent = opt;
@@ -243,6 +303,8 @@ function answer(btn, right) {
     b.disabled = true;
     if (b.textContent === hadith.options[0]) b.classList.add('right');
   }
+  markQuizDay();
+  writeSave(save);
   if (right) {
     if (save.goldenDay !== today) {
       save.golden++;
@@ -278,6 +340,7 @@ function showResult() {
     $('resTitle').textContent = r.level % 5 === 0 ? 'Boss Defeated! 🎉' : 'Great job! 🎉';
     $('resText').textContent = `You caught ${r.count} bananas on level ${r.level}!`;
     const lines = [`🍌 Caught: <b>+${r.count}</b>`];
+    if (r.golden) lines.push('✨ Golden banana caught!');
     if (r.bonus) lines.push(`⏱️ Speed bonus: <b>+${r.bonus}</b>`);
     if (r.reward === 'golden') lines.push('🍌⭐ Golden Banana: <b>+1</b>');
     if (r.reward === 'bonus') lines.push('🌙 Hadith bonus: <b>+5</b>');

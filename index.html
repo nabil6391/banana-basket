@@ -27,6 +27,7 @@
       <div class="ribbon">🌙 Hadith of the Day</div>
       <blockquote id="hadithText"></blockquote>
       <div class="source">— <span id="hadithSource"></span></div>
+      <button class="read-btn hidden" id="readBtn" type="button" aria-pressed="false"><span class="ico">🔊</span><span class="lbl">Read to me</span></button>
       <div class="explain"><b>What does it mean?</b><p id="hadithExplain"></p></div>
       <button class="btn big" id="hadithPlay">Play ▶</button>
     </div>
@@ -40,6 +41,7 @@
       <div id="hubBoss" class="boss-warn hidden">💣 BOSS LEVEL! Watch out for the Storm Cloud's bombs!</div>
       <p id="hubGoal" class="goal"></p>
       <div id="levelPath" class="level-path"></div>
+      <div class="week" id="weekRow" title="Days this week with a Hadith Challenge"><span class="week-title">🌙 Hadith this week</span><div class="moons" id="weekMoons"></div></div>
       <button class="btn big" id="hubPlay">Start ▶</button>
       <div class="row">
         <button class="btn orange" id="hubPractice">🎯 Practice</button>
@@ -99,6 +101,7 @@
       <div class="ribbon">⭐ Hadith Challenge</div>
       <blockquote id="quizHadith" class="small-quote"></blockquote>
       <h2 id="quizQuestion"></h2>
+      <div id="quizHint" class="quiz-hint hidden">✨ Golden banana hint: one wrong answer is hidden!</div>
       <div id="quizOptions" class="options"></div>
       <div id="quizFeedback" class="feedback hidden"></div>
       <button class="btn big hidden" id="quizNext">Continue ▶</button>

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import {
-  makeBanana, makeBunch, makeBomb, makeBasket, applySkin, setPile, BASKET,
+  makeBanana, makeBunch, makeBomb, makeGoldenBanana, makeBasket, applySkin, setPile, BASKET,
   makeShieldBubble, makeMagnet, makeCloud, makeBossCloud, makePalm, makeBush, toon,
 } from './models.js';
 import { sfx } from './audio.js';
 
 export const POWER_DURATION = { magnet: 10, speed: 10 };
 export const EXTRA_BANANAS = 5;
+export const GOLDEN_VALUE = 3;   // the one golden banana per level counts for this many
 
 // Level design: every 5th level is a boss level with bombs.
 export function levelConfig(n) {
@@ -256,6 +257,9 @@ export class Game {
     this.bossCloud.visible = cfg.boss;
     this.bossCloud.position.set(0, this.bounds.top + 4, 0);
     this.bossX = 0;
+    // one golden banana per real level, somewhere in the first 20–65% of the clock
+    this.goldenCaught = false;
+    this.goldenAt = cfg.practice ? Infinity : cfg.time * (0.2 + Math.random() * 0.45);
     setPile(this.basket, 0);
     this.lastHud = '';
     this.emitHud(true);
@@ -314,7 +318,7 @@ export class Game {
     // up to 10 bonus bananas, based on the share of the clock left over
     const bonus = success ? Math.floor((this.timeLeft / this.cfg.time) * 10) : 0;
     this.endTimer = success ? 1.4 : 1.0;
-    this.endResult = { success, count: this.count, target: this.cfg.target, bonus, level: this.cfg.level };
+    this.endResult = { success, count: this.count, target: this.cfg.target, bonus, level: this.cfg.level, golden: this.goldenCaught };
     if (success) {
       sfx.win();
       this.popup('Level Complete!', new THREE.Vector3(0, this.bounds.top * 0.55, 0), 'big');
@@ -331,17 +335,19 @@ export class Game {
     let mesh;
     if (type === 'bomb') mesh = makeBomb();
     else if (type === 'bunch') mesh = makeBunch();
+    else if (type === 'golden') mesh = makeGoldenBanana();
     else mesh = makeBanana();
     mesh.scale.setScalar(type === 'bomb' ? 1 : 0.9);
     mesh.position.set(x, y, 0);
-    mesh.rotation.z = Math.random() * Math.PI * 2;
+    mesh.rotation.z = type === 'golden' ? 0 : Math.random() * Math.PI * 2;
     this.scene.add(mesh);
-    const speed = this.cfg.fallSpeed * (0.85 + Math.random() * 0.3) * (type === 'bunch' ? 0.85 : 1);
+    // the golden one drifts down slowly so every kid gets a fair look at it
+    const speed = this.cfg.fallSpeed * (0.85 + Math.random() * 0.3) * (type === 'bunch' ? 0.85 : type === 'golden' ? 0.6 : 1);
     this.items.push({
       type, mesh, x, y, vy: -speed, vx: 0,
-      spin: (Math.random() - 0.5) * 3,
+      spin: type === 'golden' ? 0.6 : (Math.random() - 0.5) * 3,
       sway: Math.random() * Math.PI * 2,
-      value: type === 'bunch' ? 3 : 1,
+      value: type === 'bunch' ? 3 : type === 'golden' ? GOLDEN_VALUE : 1,
     });
   }
 
@@ -500,6 +506,11 @@ export class Game {
       const type = Math.random() < cfg.bunchChance ? 'bunch' : 'banana';
       this.spawn(type, (Math.random() * 2 - 1) * lim, this.bounds.top + 1);
     }
+    if (this.goldenAt < Infinity && cfg.time - this.timeLeft >= this.goldenAt) {
+      this.goldenAt = Infinity;
+      this.spawn('golden', (Math.random() * 1.4 - 0.7) * lim, this.bounds.top + 1);
+      this.popup('✨ Golden banana! ✨', new THREE.Vector3(0, this.bounds.top * 0.6, 0), 'gold');
+    }
     if (cfg.practice && cfg.bombInterval < Infinity) {
       this.bombTimer -= dt;
       if (this.bombTimer <= 0) {
@@ -549,6 +560,11 @@ export class Game {
         const ring = it.mesh.getObjectByName('ring');
         ring.rotation.z = -it.mesh.rotation.z;
         ring.scale.setScalar(1 + Math.sin(this.time * 8) * 0.1);
+      } else if (it.type === 'golden') {
+        it.mesh.rotation.z = Math.sin(it.sway) * 0.35;                 // gentle rock instead of a tumble
+        const ring = it.mesh.getObjectByName('ring');
+        ring.rotation.z = this.reduceMotion ? 0 : this.time * 1.5;
+        it.mesh.getObjectByName('glow').scale.setScalar(1 + Math.sin(this.time * 4) * 0.08);
       }
 
       const catchY = rimY + 0.1;
@@ -597,9 +613,17 @@ export class Game {
       return;
     }
     this.combo++;
-    if (it.type === 'bunch') sfx.bunch(); else sfx.catch(this.combo);
-    this.burst(pos, it.type === 'bunch' ? 0xfff27a : 0xffe04a, it.type === 'bunch' ? 16 : 7, 4);
-    this.popup(`+${it.value}`, pos, it.type === 'bunch' ? 'gold' : '');
+    if (it.type === 'golden') {
+      this.goldenCaught = true;
+      sfx.golden();
+      this.burst(pos, 0xfff6c0, 28, 6);
+      this.popup(`+${it.value} ✨ Golden!`, pos, 'gold');
+      this.popup('Quiz hint unlocked 🌙', new THREE.Vector3(this.bx, BASKET_Y + 3.2, 0), 'green');
+    } else {
+      if (it.type === 'bunch') sfx.bunch(); else sfx.catch(this.combo);
+      this.burst(pos, it.type === 'bunch' ? 0xfff27a : 0xffe04a, it.type === 'bunch' ? 16 : 7, 4);
+      this.popup(`+${it.value}`, pos, it.type === 'bunch' ? 'gold' : '');
+    }
     if (this.combo > 0 && this.combo % 10 === 0) this.popup(`${this.combo} in a row! 🌟`, new THREE.Vector3(this.bx, BASKET_Y + 3, 0), 'green');
     this.addBananas(it.value);
   }

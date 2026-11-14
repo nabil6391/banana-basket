@@ -325,3 +325,38 @@ h3 { margin-top: 1rem; }
   .timer { width: 2.8rem; height: 2.8rem; font-size: 1.15rem; }
   .bar { height: 1.7rem; }
 }
+
+/* ---------- Small ideas 2026-11: read-aloud, weekly moons, golden banana hint ---------- */
+.read-btn {
+  font-family: inherit; font-weight: 800; font-size: 1rem; color: var(--purple-dark); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 0.25rem;
+  background: #efe8ff; border: 3px solid var(--purple); border-radius: 62.4375rem; padding: 0.25rem 1rem 0.25rem 0.6rem;
+  box-shadow: 0 3px 0 var(--purple-dark); transition: transform 0.08s, box-shadow 0.08s;
+}
+.read-btn .ico { font-size: 1.25rem; line-height: 1; }
+.read-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--purple-dark); }
+.read-btn.on { background: var(--purple); color: #fff; }
+.read-btn.on .ico { animation: bump 1s infinite; }
+
+.week { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; margin: 0 0 0.9rem; }
+.week-title { font-size: 0.85rem; font-weight: 800; color: var(--purple-dark); text-transform: uppercase; letter-spacing: 1px; }
+.moons { display: flex; gap: 0.35rem; }
+.moon {
+  width: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  background: #f6f1e6; border: 2px solid #eadfc4; border-radius: 0.8rem; padding: 0.2rem 0 0.1rem;
+}
+.moon .m { font-size: 1.15rem; line-height: 1.2; color: #c9bb9a; }
+.moon small { font-size: 0.62rem; font-weight: 800; color: #a08a5a; }
+.moon.done { background: #efe8ff; border-color: var(--purple); }
+.moon.done .m { filter: drop-shadow(0 0 3px #d9c8ff); }
+.moon.today { border-color: var(--pink); box-shadow: 0 2px 0 #c8467c; }
+.moon.today small { color: #c8467c; }
+
+.quiz-hint {
+  display: inline-block; background: linear-gradient(#fffbe6, #fff2b3); border: 3px solid var(--yellow); border-radius: 62.4375rem;
+  padding: 0.2rem 0.9rem; font-weight: 800; font-size: 0.95rem; color: #8a6200; margin: 0.25rem 0 0; box-shadow: 0 3px 0 var(--yellow-dark);
+}
+
+@media (max-width: 400px) { .moon { width: 2.1rem; } .moon .m { font-size: 1rem; } }
+@media (max-height: 520px) and (orientation: landscape) { .week { margin-bottom: 0.4rem; } .moon { width: 2.1rem; padding: 0.1rem 0; } }
+@media (prefers-reduced-motion: reduce) { .read-btn.on .ico { animation: none !important; } }
