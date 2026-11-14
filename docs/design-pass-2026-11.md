@@ -25,8 +25,8 @@ All 14 hadith texts, sources, explanations and quiz answers read as accurate par
 1. **Combo streak** — consecutive catches without a miss build a multiplier shown on the HUD bar; rewards attention, not just reflexes. *M*
 2. **Spilled-banana rescue** — after a bomb, the spilled bananas bounce on the ground for 2 s and can be re-caught; turns the harshest moment into a mini-chance. *M*
 3. **Monkey helper companion** — a small monkey beside the basket that cheers, winces at bombs and sleeps on the pause screen; gives the game a face. *L*
-4. **Golden banana in play** — one rare golden banana per level that is worth 3 and makes the quiz question easier if caught; links the two halves of the game. *S*
-5. **Daily streak calendar on the hub** — a 7-day row of moons showing which days the Hadith quiz was done; motivates coming back for the daily hadith. *S*
+4. ~~**Golden banana in play** — one rare golden banana per level that is worth 3 and makes the quiz question easier if caught; links the two halves of the game. *S*~~ **Done** in `7a25a02` — `makeGoldenBanana`, spawns once per real level, worth `GOLDEN_VALUE` (3), hides one wrong quiz answer.
+5. ~~**Daily streak calendar on the hub** — a 7-day row of moons showing which days the Hadith quiz was done; motivates coming back for the daily hadith. *S*~~ **Done** in `7a25a02` — seven moons on the hub (`save.quizDays`), no streak counting or warnings.
 6. **Level theme shifts** — every 5 levels change sky/time of day (sunset, night with stars) so progress is visible in the world, not only the badge. *M*
-7. **Hadith read-aloud** — Web Speech API button on the hadith card for pre-readers; the explanation is already short enough. *S*
+7. ~~**Hadith read-aloud** — Web Speech API button on the hadith card for pre-readers; the explanation is already short enough. *S*~~ **Done** in `7a25a02` — "Read to me" button (shown only when `speechSynthesis` exists) reads the hadith + explanation.
 8. **Hand-drawn menu thumbnails** — render the basket skins and power models with the game's own Three.js models (as sadaqah-well does) instead of emoji, so menus match the art. *M*
