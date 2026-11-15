@@ -4,6 +4,8 @@ import { hadithOfTheDay, dayNumber } from './hadith.js';
 import { loadSave, writeSave } from './save.js';
 import { sfx, unlockAudio, setMuted } from './audio.js';
 import { SKINS } from './models.js';
+import { themeFor, themeChangesAfter, STREAK } from './rules.js';
+import { skinThumb, powerThumb, practiceThumb, applyThumb } from './thumbs.js';
 
 const $ = (id) => document.getElementById(id);
 const save = loadSave();
@@ -104,6 +106,11 @@ if (speech && 'SpeechSynthesisUtterance' in window) {
 function showHub() {
   const cfg = levelConfig(save.level);
   $('hubLevel').textContent = `Level ${save.level}`;
+  const theme = themeFor(save.level);
+  $('hubTheme').querySelector('.ico').textContent = theme.icon;
+  $('hubTheme').querySelector('.lbl').textContent = theme.name;
+  $('hubTheme').dataset.theme = theme.id;
+  game.setThemeForLevel(save.level);
   $('hubBoss').classList.toggle('hidden', !cfg.boss);
   $('hubGoal').innerHTML = `Catch <b>${cfg.target} bananas</b> in <b>${cfg.time} seconds</b>!`;
   const path = $('levelPath');
@@ -147,6 +154,7 @@ function markQuizDay() {
 }
 $('hubPlay').onclick = () => startLevel();
 $('hubPractice').onclick = () => show('practice');
+for (const img of document.querySelectorAll('img[data-practice]')) applyThumb(img, practiceThumb(img.dataset.practice));
 $('practiceEasy').onclick = () => startLevel(practiceConfig(false));
 $('practiceBombs').onclick = () => startLevel(practiceConfig(true));
 $('practiceBack').onclick = () => showHub();
@@ -160,6 +168,7 @@ function startLevel(cfg = levelConfig(save.level)) {
   $('hudLevel').classList.toggle('boss', cfg.boss);
   $('hud').classList.toggle('practice', !!cfg.practice);
   $('quitBtn').textContent = cfg.practice ? 'End Practice' : 'Leave Level';
+  game.setThemeForLevel(save.level);   // practice plays under the current level's sky
   game.start(cfg, save.powers);
   const intro = cfg.practice ? (cfg.bombInterval < Infinity ? 'Practice! Catch bananas, dodge bombs 💣' : 'Practice time! No clock, no pressure 😊')
     : cfg.boss ? 'Boss Level! Dodge the bombs! 💣' : `Catch ${cfg.target} bananas!`;
@@ -190,6 +199,15 @@ function renderHud(h) {
   $('hudBar').style.width = practice ? '0%' : `${Math.min(100, (h.count / h.target) * 100)}%`;
   $('hudTimer').textContent = practice ? '∞' : h.time;
   $('hudTimer').classList.toggle('low', !practice && h.time <= 5);
+  // combo streak: appears from 3 in a row, shows the ×2/×3 wallet multiplier from the first tier
+  const streak = $('hudStreak');
+  streak.classList.toggle('hidden', h.combo < 3);
+  streak.dataset.tier = h.tier;
+  $('streakN').textContent = h.combo;
+  $('streakMult').classList.toggle('hidden', h.tier < 2 || practice);
+  $('streakMult').textContent = h.streakBonus >= STREAK.maxBonus ? `×${h.tier} · +${h.streakBonus} 🍌 max` : `×${h.tier} · +${h.streakBonus} 🍌`;
+  if (h.combo >= 3 && h.combo !== renderHud.lastCombo) { streak.classList.remove('tick'); void streak.offsetWidth; streak.classList.add('tick'); }
+  renderHud.lastCombo = h.combo;
   for (const b of $('powerBar').children) {
     const type = b.dataset.type;
     const qty = save.powers[type] || 0;
@@ -253,7 +271,7 @@ window.addEventListener('keydown', (e) => {
 let lastResult = null;
 function onLevelEnd(r) {
   lastResult = r;
-  const earned = r.count + r.bonus;
+  const earned = r.count + r.bonus + (r.streakBonus || 0);
   save.bananas += earned;
   r.earned = earned;
   if (r.success) {
@@ -340,16 +358,26 @@ function showResult() {
     $('resTitle').textContent = r.level % 5 === 0 ? 'Boss Defeated! 🎉' : 'Great job! 🎉';
     $('resText').textContent = `You caught ${r.count} bananas on level ${r.level}!`;
     const lines = [`🍌 Caught: <b>+${r.count}</b>`];
+    if (r.rescued) lines.push(`🧺 Rescued after a bomb: <b>${r.rescued}</b>`);
     if (r.golden) lines.push('✨ Golden banana caught!');
     if (r.bonus) lines.push(`⏱️ Speed bonus: <b>+${r.bonus}</b>`);
+    if (r.streakBonus) lines.push(`🔥 Streak bonus: <b>+${r.streakBonus}</b> <small>(best run ${r.bestCombo} in a row)</small>`);
+    else if (r.bestCombo >= 3) lines.push(`🔥 Best run: <b>${r.bestCombo}</b> in a row`);
     if (r.reward === 'golden') lines.push('🍌⭐ Golden Banana: <b>+1</b>');
     if (r.reward === 'bonus') lines.push('🌙 Hadith bonus: <b>+5</b>');
+    if (themeChangesAfter(r.level)) {
+      const t = themeFor(r.level + 1);
+      lines.push(`<span class="new-sky">${t.icon} New skies ahead: <b>${t.name}</b>!</span>`);
+    }
     $('resEarn').innerHTML = lines.join('<br>');
     $('resNext').textContent = levelConfig(save.level).boss ? `Boss Level ${save.level} 💣` : `Level ${save.level} ▶`;
   } else {
     $('resTitle').textContent = 'So close! 💪';
     $('resText').textContent = `You caught ${r.count} of ${r.target} bananas. You can do it — try again!`;
-    $('resEarn').innerHTML = `🍌 You still keep <b>+${r.count}</b> bananas!${save.bananas >= 10 ? '<br><small>Tip: grab a power-up in the shop!</small>' : ''}`;
+    const keep = [`🍌 You still keep <b>+${r.count}</b> bananas!`];
+    if (r.streakBonus) keep.push(`🔥 Streak bonus: <b>+${r.streakBonus}</b>`);
+    if (save.bananas >= 10) keep.push('<small>Tip: grab a power-up in the shop!</small>');
+    $('resEarn').innerHTML = keep.join('<br>');
     $('resNext').textContent = 'Try Again 🔁';
   }
   refreshWallet();
@@ -374,8 +402,9 @@ function renderShop() {
     const item = document.createElement('div');
     const have = save.powers[type] || 0;
     item.className = `shop-item p-${type}`;
-    item.innerHTML = `<div class="ico">${p.icon}</div><div class="name">${p.name}</div>
+    item.innerHTML = `<div class="ico"><img class="thumb hidden" alt="" /><span class="fb">${p.icon}</span></div><div class="name">${p.name}</div>
       <div class="desc">${p.desc}</div><div class="own${have ? ' has' : ''}">${have ? `You have ×${have}` : 'None yet'}</div>`;
+    applyThumb(item.querySelector('img'), powerThumb(type, save.skin));
     const b = document.createElement('button');
     b.className = 'btn';
     b.textContent = `Buy · ${p.price} 🍌`;
@@ -401,7 +430,9 @@ function renderShop() {
     const item = document.createElement('div');
     item.className = `shop-item skin${save.skin === id ? ' equipped' : ''}${id === 'golden' ? ' gold' : ''}`;
     const weave = `repeating-linear-gradient(90deg, ${s.a} 0 8px, ${s.b} 8px 16px)`;
-    item.innerHTML = `<div class="swatch" style="background:${weave};border-color:#${s.rim.toString(16).padStart(6, '0')}"></div><div class="name">${s.name}</div>`;
+    // the woven swatch stays as the fallback until the 3D basket picture is ready
+    item.innerHTML = `<div class="ico skin-pic"><img class="thumb hidden" alt="" /><div class="swatch fb" style="background:${weave};border-color:#${s.rim.toString(16).padStart(6, '0')}"></div></div><div class="name">${s.name}</div>`;
+    applyThumb(item.querySelector('img'), skinThumb(id));
     const b = document.createElement('button');
     b.className = 'btn';
     if (save.skin === id) { b.textContent = 'Using ✔'; b.disabled = true; }
@@ -440,4 +471,4 @@ refreshWallet();
 show('hadith');
 
 // expose for debugging in the console
-window.bananaBasket = { game, save };
+window.bananaBasket = { game, save, showHub, startLevel, show };

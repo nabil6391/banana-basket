@@ -38,6 +38,7 @@
     <div class="card hub-card">
       <div class="logo small">Banana <span>Basket</span></div>
       <div id="hubLevel" class="level-badge">Level 1</div>
+      <div id="hubTheme" class="theme-tag"><span class="ico">☀️</span><span class="lbl">Sunny day</span></div>
       <div id="hubBoss" class="boss-warn hidden">💣 BOSS LEVEL! Watch out for the Storm Cloud's bombs!</div>
       <p id="hubGoal" class="goal"></p>
       <div id="levelPath" class="level-path"></div>
@@ -59,10 +60,10 @@
       <p class="goal">No clock, no target — just catch and have fun!</p>
       <div class="practice-choices">
         <button class="choice" id="practiceEasy">
-          <span class="ico">🍌</span><b>Just Bananas</b><small>Nice and relaxed. Great for little ones!</small>
+          <span class="ico"><img class="thumb hidden" alt="" data-practice="easy" /><span class="fb">🍌</span></span><b>Just Bananas</b><small>Nice and relaxed. Great for little ones!</small>
         </button>
         <button class="choice" id="practiceBombs">
-          <span class="ico">💣</span><b>Bananas + Bombs</b><small>Practise dodging before the boss levels.</small>
+          <span class="ico"><img class="thumb hidden" alt="" data-practice="bombs" /><span class="fb">💣</span></span><b>Bananas + Bombs</b><small>Practise dodging before the boss levels.</small>
         </button>
       </div>
       <p class="sub">Just for practice — no bananas are earned.</p>
@@ -81,6 +82,7 @@
       <div class="timer" id="hudTimer">30</div>
       <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸</button>
     </div>
+    <div class="streak hidden" id="hudStreak" aria-live="off"><span class="fire">🔥</span><b id="streakN">0</b><span class="lbl">in a row</span><span class="mult hidden" id="streakMult">×2</span></div>
     <div class="powers" id="powerBar"></div>
   </section>
 

@@ -19,7 +19,8 @@ html, body {
   margin: 0; height: 100%; height: 100dvh; overflow: hidden; touch-action: manipulation;
   font-family: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;
   color: var(--ink);
-  background: linear-gradient(#5cc8ff 0%, #9fe0ff 45%, #d9f5ff 70%, #eafbe0 100%);
+  /* the sky: four stops the level theme repaints (see rules.js THEMES / Game.setTheme) */
+  background: linear-gradient(var(--sky1, #5cc8ff) 0%, var(--sky2, #9fe0ff) 45%, var(--sky3, #d9f5ff) 70%, var(--sky4, #eafbe0) 100%);
   user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -360,3 +361,48 @@ h3 { margin-top: 1rem; }
 @media (max-width: 400px) { .moon { width: 2.1rem; } .moon .m { font-size: 1rem; } }
 @media (max-height: 520px) and (orientation: landscape) { .week { margin-bottom: 0.4rem; } .moon { width: 2.1rem; padding: 0.1rem 0; } }
 @media (prefers-reduced-motion: reduce) { .read-btn.on .ico { animation: none !important; } }
+
+/* ---------- Medium ideas 2026-11: streak, rescue, themes, model thumbnails ---------- */
+/* Combo streak pill under the HUD bar */
+.streak {
+  position: absolute; top: calc(4.1rem + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 0.35rem; background: #fff; border-radius: 62.4375rem; padding: 0.15rem 0.9rem 0.15rem 0.6rem;
+  font-weight: 800; font-size: 1.05rem; box-shadow: 0 3px 0 rgba(0,0,0,.12); border: 3px solid #ffd27a; color: #a05a00; white-space: nowrap;
+}
+.streak .fire { font-size: 1.2rem; line-height: 1; }
+.streak b { font-size: 1.25rem; }
+.streak .lbl { opacity: 0.7; font-size: 0.9rem; }
+.streak .mult { background: var(--orange); color: #fff; border-radius: 62.4375rem; padding: 0 0.6rem; font-size: 0.9rem; box-shadow: 0 2px 0 var(--orange-dark); }
+.streak[data-tier="2"] { border-color: var(--orange); }
+.streak[data-tier="3"] { border-color: #ff4d3d; background: #fff3e0; }
+.streak[data-tier="3"] .mult { background: #ff4d3d; box-shadow: 0 2px 0 #c0301e; }
+.streak.tick { animation: streakTick 0.3s; }
+@keyframes streakTick { 40% { transform: translateX(-50%) scale(1.12); } }
+.popup.fire { color: #ffd27a; -webkit-text-stroke-color: #c0501e; font-size: 2.2rem; }
+@media (max-width: 40rem) { .streak { top: calc(8.4rem + env(safe-area-inset-top)); font-size: 0.95rem; } }
+@media (max-height: 520px) and (orientation: landscape) { .streak { top: calc(3.6rem + env(safe-area-inset-top)); font-size: 0.9rem; } }
+
+/* Hub theme tag: which sky this block of levels plays under */
+.theme-tag {
+  display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 800; font-size: 0.9rem; border-radius: 62.4375rem;
+  padding: 0.1rem 0.9rem 0.1rem 0.6rem; margin: -0.1rem 0 0.35rem; background: #e3f6ff; color: #1c5a8a; border: 2px solid #9fd8ff;
+}
+.theme-tag .ico { font-size: 1.1rem; line-height: 1; }
+.theme-tag[data-theme="sunset"] { background: #ffe6d0; color: #a04a10; border-color: #ffb36b; }
+.theme-tag[data-theme="night"] { background: #22397a; color: #fff; border-color: #6f8ad8; }
+.theme-tag[data-theme="dawn"] { background: #f1e6ff; color: #6f48c2; border-color: #c9b6f2; }
+.earn .new-sky { display: inline-block; margin-top: 0.2rem; background: #fff; border-radius: 0.75rem; padding: 0.1rem 0.7rem; }
+
+/* Menu pictures rendered from the game's own models (emoji / swatch stay as fallback) */
+.shop-item .ico, .choice .ico { position: relative; }
+.shop-item .ico img.thumb, .choice .ico img.thumb { width: 100%; height: 100%; object-fit: contain; display: block; }
+.shop-item .ico.has-thumb .fb, .choice .ico.has-thumb .fb { display: none; }
+.shop-item .ico.skin-pic { width: 4.6rem; height: 4.2rem; background: #fff6dc; border-radius: 1rem; }
+.shop-item .ico.skin-pic .swatch { margin: 0.45rem auto; }
+.shop-item.gold .ico.skin-pic { background: #fff3b3; }
+.shop-item.equipped .ico.skin-pic { background: #ddf7d6; }
+.choice .ico { width: 4.4rem; height: 4rem; display: grid; place-items: center; }
+.choice .ico .fb { font-size: 2.6rem; line-height: 1; }
+.choice .ico img.thumb { transform: scale(1.25); }
+@media (max-height: 520px) and (orientation: landscape) { .choice .ico { width: 3.2rem; height: 3rem; } .choice .ico .fb { font-size: 1.8rem; } .shop-item .ico.skin-pic { width: 3.4rem; height: 3.2rem; } }
+@media (prefers-reduced-motion: reduce) { .streak.tick { animation: none !important; } }

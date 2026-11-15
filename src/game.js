@@ -4,6 +4,7 @@ import {
   makeShieldBubble, makeMagnet, makeCloud, makeBossCloud, makePalm, makeBush, toon,
 } from './models.js';
 import { sfx } from './audio.js';
+import { streakTier, streakBonusFor, streakTierUp, RESCUE, canRescue, THEMES, themeFor } from './rules.js';
 
 export const POWER_DURATION = { magnet: 10, speed: 10 };
 export const EXTRA_BANANAS = 5;
@@ -89,13 +90,15 @@ export class Game {
   // ---------------- World ----------------
   buildWorld() {
     const s = this.scene;
-    s.add(new THREE.HemisphereLight(0xffffff, 0x88cc77, 1.4));
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x88cc77, 1.4);
+    s.add(this.hemi);
     const sun = new THREE.DirectionalLight(0xffffff, 1.8);
     sun.position.set(-8, 20, 12);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -5, near: 1, far: 60 });
     s.add(sun);
+    this.sun = sun;
 
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), toon(0x7ed957));
     ground.rotation.x = -Math.PI / 2;
@@ -125,6 +128,29 @@ export class Game {
     const glow = new THREE.Mesh(new THREE.CircleGeometry(6.5, 32), new THREE.MeshBasicMaterial({ color: 0xfff7cf, transparent: true, opacity: 0.4, fog: false }));
     glow.position.set(-22, 26, -60.1);
     s.add(glow);
+    this.sunDisc = sunDisc;
+    this.sunGlow = glow;
+    // moon craters only show on the night theme (the disc itself turns pale)
+    this.craters = new THREE.Group();
+    for (const [x, y, r] of [[-1.2, 0.9, 0.7], [1.1, -0.4, 0.55], [-0.3, -1.6, 0.45], [1.6, 1.4, 0.35]]) {
+      const c = new THREE.Mesh(new THREE.CircleGeometry(r, 16), new THREE.MeshBasicMaterial({ color: 0xd8d2c0, transparent: true, opacity: 0, fog: false }));
+      c.position.set(x, y, 0.05);
+      this.craters.add(c);
+    }
+    sunDisc.add(this.craters);
+    // stars: one instanced mesh, faded in by the theme
+    const starGeo = new THREE.SphereGeometry(0.22, 6, 5);
+    this.starMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, fog: false, depthWrite: false });
+    this.stars = new THREE.InstancedMesh(starGeo, this.starMat, 90);
+    const m4 = new THREE.Matrix4();
+    for (let i = 0; i < 90; i++) {
+      const sc = 0.6 + Math.random() * 0.9;
+      m4.makeScale(sc, sc, sc).setPosition(-75 + Math.random() * 150, 10 + Math.random() * 34, -62 - Math.random() * 10);
+      this.stars.setMatrixAt(i, m4);
+    }
+    this.stars.instanceMatrix.needsUpdate = true;
+    this.stars.visible = false;
+    s.add(this.stars);
 
     // palms & bushes
     this.palms = [];
@@ -178,9 +204,62 @@ export class Game {
     this.bossCloud = makeBossCloud();
     this.bossCloud.visible = false;
     s.add(this.bossCloud);
+
+    this.setTheme(THEMES[0], true);
   }
 
   setSkin(id) { applySkin(this.basket, id); }
+
+  // ---------------- Level themes ----------------
+  // Sky (CSS gradient behind the transparent canvas), fog, lights, sun/moon and stars all blend
+  // from the current look to the new theme over ~1.5 s (instantly under reduced motion).
+  setTheme(theme, instant = false) {
+    if (!theme || theme === this.themeTo) return;
+    const snap = (t) => ({
+      sky: t.sky.map((c) => new THREE.Color(c)),
+      fog: new THREE.Color(t.fog),
+      hemiSky: new THREE.Color(t.hemi.sky), hemiGround: new THREE.Color(t.hemi.ground), hemiI: t.hemi.intensity,
+      sunC: new THREE.Color(t.sun.color), sunI: t.sun.intensity,
+      disc: new THREE.Color(t.disc.color), glow: new THREE.Color(t.disc.glow), discY: t.disc.y,
+      stars: t.stars, moon: t.moon,
+    });
+    this.themeFrom = this.themeCur || snap(theme);
+    this.themeTo = theme;
+    this.themeTarget = snap(theme);
+    this.themeBlend = instant || this.reduceMotion ? 1 : 0;
+    this.applyThemeBlend();
+  }
+
+  applyThemeBlend() {
+    const a = this.themeFrom, b = this.themeTarget;
+    const k = THREE.MathUtils.smoothstep(this.themeBlend, 0, 1);
+    const lerp = (x, y) => x + (y - x) * k;
+    const col = (x, y, out) => out.copy(x).lerp(y, k);
+    const cur = this.themeCur ||= {
+      sky: [0, 0, 0, 0].map(() => new THREE.Color()), fog: new THREE.Color(), hemiSky: new THREE.Color(), hemiGround: new THREE.Color(),
+      sunC: new THREE.Color(), disc: new THREE.Color(), glow: new THREE.Color(),
+    };
+    for (let i = 0; i < 4; i++) col(a.sky[i], b.sky[i], cur.sky[i]);
+    col(a.fog, b.fog, cur.fog); col(a.hemiSky, b.hemiSky, cur.hemiSky); col(a.hemiGround, b.hemiGround, cur.hemiGround);
+    col(a.sunC, b.sunC, cur.sunC); col(a.disc, b.disc, cur.disc); col(a.glow, b.glow, cur.glow);
+    cur.hemiI = lerp(a.hemiI, b.hemiI); cur.sunI = lerp(a.sunI, b.sunI); cur.discY = lerp(a.discY, b.discY);
+    cur.stars = lerp(a.stars, b.stars); cur.moon = lerp(a.moon, b.moon);
+
+    this.scene.fog.color.copy(cur.fog);
+    this.hemi.color.copy(cur.hemiSky); this.hemi.groundColor.copy(cur.hemiGround); this.hemi.intensity = cur.hemiI;
+    this.sun.color.copy(cur.sunC); this.sun.intensity = cur.sunI;
+    this.sunDisc.material.color.copy(cur.disc); this.sunGlow.material.color.copy(cur.glow);
+    this.sunDisc.position.y = cur.discY; this.sunGlow.position.y = cur.discY;
+    for (const c of this.craters.children) c.material.opacity = cur.moon * 0.8;
+    this.starMat.opacity = cur.stars;
+    this.stars.visible = cur.stars > 0.01;
+    const root = document.documentElement.style;
+    cur.sky.forEach((c, i) => root.setProperty(`--sky${i + 1}`, `#${c.getHexString()}`));
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `#${cur.sky[0].getHexString()}`);
+  }
+
+  /** Theme for whichever level the hub or HUD is showing. */
+  setThemeForLevel(level) { this.setTheme(themeFor(level)); }
 
   resize() {
     const w = window.innerWidth, h = window.innerHeight;
@@ -260,6 +339,11 @@ export class Game {
     // one golden banana per real level, somewhere in the first 20–65% of the clock
     this.goldenCaught = false;
     this.goldenAt = cfg.practice ? Infinity : cfg.time * (0.2 + Math.random() * 0.45);
+    // combo streak: wallet bonus (never in practice) and the best run of the level
+    this.streakBonus = 0;
+    this.bestCombo = 0;
+    this.rescued = 0;
+    this.rescueHintT = 0;
     setPile(this.basket, 0);
     this.lastHud = '';
     this.emitHud(true);
@@ -318,7 +402,10 @@ export class Game {
     // up to 10 bonus bananas, based on the share of the clock left over
     const bonus = success ? Math.floor((this.timeLeft / this.cfg.time) * 10) : 0;
     this.endTimer = success ? 1.4 : 1.0;
-    this.endResult = { success, count: this.count, target: this.cfg.target, bonus, level: this.cfg.level, golden: this.goldenCaught };
+    this.endResult = {
+      success, count: this.count, target: this.cfg.target, bonus, level: this.cfg.level, golden: this.goldenCaught,
+      streakBonus: this.streakBonus, bestCombo: this.bestCombo, rescued: this.rescued,
+    };
     if (success) {
       sfx.win();
       this.popup('Level Complete!', new THREE.Vector3(0, this.bounds.top * 0.55, 0), 'big');
@@ -380,16 +467,41 @@ export class Game {
     if (!small) this.burst(pos, 0x444444, 12, 7);
   }
 
+  // Spilled bananas fly out of the basket, bounce along the path for RESCUE.life seconds and can be
+  // scooped back up (see rescueDebris). They stay on the play plane so the basket can reach them.
   spillBananas(n) {
     for (let i = 0; i < n; i++) {
       const m = makeBanana();
       m.scale.setScalar(0.7);
-      m.position.set(this.bx, BASKET_Y + 0.6, 0.5);
+      m.position.set(this.bx, BASKET_Y + 0.6, 0.3);
       this.scene.add(m);
       const a = Math.PI * (0.15 + 0.7 * Math.random());
       const sp = 7 + Math.random() * 5;
-      this.debris.push({ mesh: m, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 1 + Math.random() * 2, spin: (Math.random() - 0.5) * 12, life: 2.2 });
+      this.debris.push({
+        mesh: m, x: this.bx, y: BASKET_Y + 0.6, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 0.4 + Math.random() * 0.6,
+        spin: (Math.random() - 0.5) * 12, life: RESCUE.life, age: 0, rescuable: true,
+      });
     }
+    if (n > 0) this.rescueHintT = 0.55;
+  }
+
+  rescueDebris() {
+    const rimY = BASKET_Y + BASKET.height / 2;
+    let got = 0;
+    const pos = new THREE.Vector3(this.bx, BASKET_Y + 1, 0);
+    for (let i = this.debris.length - 1; i >= 0; i--) {
+      const d = this.debris[i];
+      if (!d.rescuable || !canRescue(d, this.bx, rimY, BASKET.radiusTop)) continue;
+      this.scene.remove(d.mesh);
+      this.debris.splice(i, 1);
+      got++;
+    }
+    if (!got) return;
+    this.rescued += got;
+    sfx.catch(got);
+    this.burst(pos, 0xffe04a, 5 + got * 2, 4);
+    this.popup(got > 1 ? `Rescued ${got}! 🍌` : 'Rescued! 🍌', pos, 'green');
+    this.addBananas(got);
   }
 
   popup(text, worldPos, kind = '') {
@@ -403,7 +515,7 @@ export class Game {
     const snap = {
       count: this.count, target: this.cfg.target, time: Math.ceil(Math.max(0, this.timeLeft)),
       shield: this.shield, magnet: Math.ceil(this.magnetT), speed: Math.ceil(this.speedT),
-      boss: this.cfg.boss, level: this.cfg.level, combo: this.combo,
+      boss: this.cfg.boss, level: this.cfg.level, combo: this.combo, tier: streakTier(this.combo), streakBonus: this.streakBonus,
     };
     const key = JSON.stringify(snap);
     if (force || key !== this.lastHud) {
@@ -427,6 +539,12 @@ export class Game {
       }
       this.bushes.forEach((b, i) => { b.scale.y = b.scale.x * (1 + Math.sin(t * 2 + i) * 0.03); });
     }
+
+    if (this.themeBlend < 1) {
+      this.themeBlend = Math.min(1, this.themeBlend + dt / 1.5);
+      this.applyThemeBlend();
+    }
+    if (this.stars.visible && !calm) this.starMat.opacity = this.themeCur.stars * (0.85 + Math.sin(t * 2.2) * 0.15);
 
     if (this.state === 'playing' && !this.paused) this.update(dt);
     else if (this.state === 'ending') this.updateEnding(dt);
@@ -584,6 +702,16 @@ export class Game {
       }
     }
 
+    // --- spilled-banana rescue ---
+    if (this.rescueHintT > 0) {
+      this.rescueHintT -= dt;
+      if (this.rescueHintT <= 0 && this.debris.length) this.popup('Quick, scoop them up! 🧺', new THREE.Vector3(this.bx, BASKET_Y + 3.4, 0), 'green');
+    }
+    if (this.debris.length) {
+      this.rescueDebris();
+      if (this.state !== 'playing') return;
+    }
+
     if (this.timeLeft <= 0) this.finish(this.count >= cfg.target);
     this.emitHud();
   }
@@ -613,6 +741,15 @@ export class Game {
       return;
     }
     this.combo++;
+    this.bestCombo = Math.max(this.bestCombo, this.combo);
+    if (!this.cfg.practice) {
+      this.streakBonus += streakBonusFor(this.combo, this.streakBonus);   // paid out with the level result
+    }
+    if (streakTierUp(this.combo)) {
+      sfx.power();
+      this.popup(`Streak ×${streakTier(this.combo)}! 🔥`, new THREE.Vector3(this.bx, BASKET_Y + 3.6, 0), 'fire');
+      this.burst(new THREE.Vector3(this.bx, BASKET_Y + 2.2, 0), 0xff8c2a, 14, 5);
+    }
     if (it.type === 'golden') {
       this.goldenCaught = true;
       sfx.golden();
@@ -661,15 +798,20 @@ export class Game {
         this.particles.splice(i, 1);
       }
     }
+    const lim = this.bounds.play + 1.5;
     for (let i = this.debris.length - 1; i >= 0; i--) {
       const d = this.debris[i];
       d.life -= dt;
+      d.age += dt;
       d.vy -= 18 * dt;
-      d.mesh.position.x += d.vx * dt;
-      d.mesh.position.y += d.vy * dt;
-      d.mesh.position.z += d.vz * dt;
-      d.mesh.rotation.z += d.spin * dt;
-      if (d.mesh.position.y < 0.2) { d.mesh.position.y = 0.2; d.vy *= -0.3; d.vx *= 0.6; }
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      if (d.x < -lim || d.x > lim) { d.x = THREE.MathUtils.clamp(d.x, -lim, lim); d.vx *= -0.5; }
+      if (d.y < 0.2) { d.y = 0.2; d.vy = Math.abs(d.vy) > 1.5 ? -d.vy * RESCUE.bounce : 0; d.vx *= 0.7; }
+      d.mesh.position.set(d.x, d.y, Math.min(0.9, d.mesh.position.z + d.vz * dt));
+      d.mesh.rotation.z += d.spin * dt * (d.vy === 0 ? 0.2 : 1);
+      // shrink away in the last half second so the chance visibly closes
+      if (d.life < 0.5) d.mesh.scale.setScalar(0.7 * Math.max(0, d.life / 0.5));
       if (d.life <= 0) {
         this.scene.remove(d.mesh);
         this.debris.splice(i, 1);
