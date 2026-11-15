@@ -30,3 +30,6 @@ All 14 hadith texts, sources, explanations and quiz answers read as accurate par
 6. **Level theme shifts** — every 5 levels change sky/time of day (sunset, night with stars) so progress is visible in the world, not only the badge. *M*
 7. ~~**Hadith read-aloud** — Web Speech API button on the hadith card for pre-readers; the explanation is already short enough. *S*~~ **Done** in `7a25a02` — "Read to me" button (shown only when `speechSynthesis` exists) reads the hadith + explanation.
 8. **Hand-drawn menu thumbnails** — render the basket skins and power models with the game's own Three.js models (as sadaqah-well does) instead of emoji, so menus match the art. *M*
+
+## Built 2026-11-15 (296f41f)
+Combo streak multiplier, spilled-banana rescue, level theme shifts every 5 levels, menu thumbnails from the game's models. Monkey helper (ART) not built.
